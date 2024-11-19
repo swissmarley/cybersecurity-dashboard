@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Lookup</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="/js/scripts.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 bg-dark text-white min-vh-100">
+                <div class="text-center py-4">
+                    <img src="/images/logo.png" alt="Cybersecurity Dashboard Logo" width="80">
+                    <h3 class="mt-2">Cybersecurity Dashboard</h3>
+                </div>
+                <div class="list-group">
+                    <a href="/" class="list-group-item list-group-item-action">Home</a>
+                    <a href="/ip-lookup" class="list-group-item list-group-item-action bg-dark text-white active">IP Lookup</a>
+                    <a href="/port-scan" class="list-group-item list-group-item-action">Port Scanning</a>
+                    <a href="/vulnerability-scan" class="list-group-item list-group-item-action">Vulnerability Scanning</a>
+                    <a href="/malware-analysis" class="list-group-item list-group-item-action">Malware Analysis</a>
+                </div>
+            </div>
+            <div class="col-md-9">
+            <div class="container mt-5">
+                </div>
+                    <div class="col-md-9">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">IP Lookup</h5>
+                                <form id="ipLookupForm">
+                                    <div class="form-group">
+                                        <label for="ip">IP Address:</label>
+                                        <input type="text" class="form-control" id="ip" name="ip" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Lookup</button>
+                                </form>
+                                <div class="mt-4" id="resultContainer" style="display:none;">
+                                    <h3>Result:</h3>
+                                    <div id="downloadContainer">
+                                        <button id="downloadTxt" class="btn btn-secondary">Download as TXT</button>
+                                        <button id="downloadJson" class="btn btn-secondary">Download as JSON</button>
+                                    </div>
+                                    <pre id="result"></pre>
+                                </div>
+                                <div class="mt-4 alert alert-danger" id="errorContainer" style="display:none;">
+                                    <span id="error"></span>
+                                </div>
+                                <div class="spinner-border text-primary mt-4" id="loading" role="status" style="display:none;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    <script>
+        $(document).ready(function(){
+            $('#ipLookupForm').on('submit', function(event){
+                event.preventDefault();
+                $('#loading').show();
+                $('#resultContainer').hide();
+                $('#errorContainer').hide();
+                
+                $.ajax({
+                    url: '/ip-lookup',
+                    type: 'POST',
+                    data: { ip: $('#ip').val() },
+                    success: function(data){
+                        $('#loading').hide();
+                        $('#resultContainer').show();
+                        $('#result').text(JSON.stringify(data, null, 2));
+                        setupDownloadButtons(data);
+                    },
+                    error: function(jqXHR){
+                        $('#loading').hide();
+                        $('#errorContainer').show();
+                        $('#error').text(jqXHR.responseJSON.error || 'An error occurred');
+                    }
+                });
+            });
+
+            function setupDownloadButtons(data) {
+                $('#downloadTxt').off('click').on('click', function() {
+                    downloadFile(data, 'txt');
+                });
+
+                $('#downloadJson').off('click').on('click', function() {
+                    downloadFile(data, 'json');
+                });
+            }
+
+            function downloadFile(data, type) {
+                let content;
+                let fileName;
+
+                if (type === 'txt') {
+                    content = JSON.stringify(data, null, 2);
+                    fileName = 'ip-lookup-result.txt';
+                } else if (type === 'json') {
+                    content = JSON.stringify(data, null, 2);
+                    fileName = 'ip-lookup-result.json';
+                }
+
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Dashboard</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="/js/scripts.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 bg-dark text-white min-vh-100">
+                <div class="text-center py-4">
+                    <img src="/images/logo.png" alt="Cybersecurity Dashboard Logo" width="80">
+                    <h3 class="mt-2">Cybersecurity Dashboard</h3>
+                </div>
+                <div class="list-group">
+                    <a href="/" class="list-group-item list-group-item-action bg-dark text-white active">Home</a>
+                    <a href="/ip-lookup" class="list-group-item list-group-item-action">IP Lookup</a>
+                    <a href="/port-scan" class="list-group-item list-group-item-action">Port Scanning</a>
+                    <a href="/vulnerability-scan" class="list-group-item list-group-item-action">Vulnerability Scanning</a>
+                    <a href="/malware-analysis" class="list-group-item list-group-item-action">Malware Analysis</a>
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-10 py-5">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Welcome to the Cybersecurity Dashboard</h5>
+                                    <p class="card-text">Select a tool from the menu to get started.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mb-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Tool Usage Analytics</h5>
+                                            <canvas id="toolUsageChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Recent Activity</h5>
+                                            <ul class="list-group" id="activityList">
+                                                <li class="list-group-item">IP Lookup: 0 Calls</li>
+                                                <li class="list-group-item">Port Scan: 0 Calls</li>
+                                                <li class="list-group-item">Vulnerability Scan: 0 Calls</li>
+                                                <li class="list-group-item">Malware Analysis: 0 Calls</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            const ctx = document.getElementById('toolUsageChart').getContext('2d');
+
+            const data = {
+                labels: ['IP Lookup', 'Port Scan', 'Vulnerability Scan', 'Malware Analysis'],
+                datasets: [{
+                    label: 'Tool Usage',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+                    hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#e0a700'],
+                    borderColor: '#ffffff',
+                    borderWidth: 1
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            };
+
+            const toolUsageChart = new Chart(ctx, config);
+
+            $.ajax({
+                url: '/api/tool-usage-stats',
+                method: 'GET',
+                success: function (response) {
+                    console.log('Data received from server:', response);
+
+                    toolUsageChart.data.datasets[0].data = response.usage;
+                    toolUsageChart.update();
+
+                    const activityList = document.getElementById('activityList');
+                    activityList.innerHTML = `
+                        <li class="list-group-item">IP Lookup: ${response.usage[0]} Calls</li>
+                        <li class="list-group-item">Port Scan: ${response.usage[1]} Calls</li>
+                        <li class="list-group-item">Vulnerability Scan: ${response.usage[2]} Calls</li>
+                        <li class="list-group-item">Malware Analysis: ${response.usage[3]} Calls</li>
+                    `;
+                },
+                error: function (error) {
+                    console.error('Error fetching tool usage stats:', error);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
