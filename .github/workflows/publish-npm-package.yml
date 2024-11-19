@@ -1,31 +1,43 @@
-name: Publish npm Package to GitHub Packages
+name: Publish NPM Package
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      - name: Authenticate with GitHub Packages
-        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
-
       - name: Install dependencies
         run: npm install
 
-      - name: Publish npm package
+      - name: Bump version
+        id: bump-version
+        run: |
+          NEW_VERSION=$(npm version patch -m "Bump version to %s [skip ci]")
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish
 
+      - name: Push version bump to repository
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add package.json package-lock.json
+          git commit -m "Bump version to ${{ env.new_version }} [skip ci]"
+          git tag ${{ env.new_version }}
+          git push origin main --tags
